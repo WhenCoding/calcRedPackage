@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>红包发放计算器</title>
+    <link rel="icon" href="http://pic-oss.lingkehudong.com/images/logo/173-137.png">
+</head>
+<style>
+*{
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+body{
+    text-align: center;
+}
+table td{
+    width: 100px;
+    text-align: center;
+    line-height: 40px;
+    background-color: #fff;
+}
+table{
+    background-color: #000;
+    margin: 0 auto;
+}
+.tip{
+    color:grey;
+    font-size: 10px;
+}
+input{
+    line-height: 25px;
+    margin-top: 5px;
+}
+span{
+    display: inline-block;
+    width: 100px;
+}
+.add{
+    display: inline-block;
+}
+</style>
+<body>
+    <div>
+        <div><span>红包总金额:</span> <input type="text" class="sum"></div>
+        <div><span>红包总份数:</span> <input type="text" class="totalNum"></div>
+        <div><span>允许误差: </span><input type="text" class="offset"></div>
+        <div class="ipt"><span>红包金额：</span><input type="text" class="iptVal"><button class="add">添加</button></div> 
+        <!-- <div style="color:red"><span>红包金额:</span></div> -->
+        <div class="numList"></div>
+        <button class="sure">确定</button><span class="tip">（可多次点击:随机获取）</span>
+    </div>
+    <div class="list">
+        <table class="redTable">
+            <!-- <tr class="redSort">
+            </tr> -->
+        </table>
+    </div>
+</body>
+<script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.js"></script>
+<script>
+    var arr = [];
+    var arrAfterShuffle = [];
+    var sum = 0;
+    var offsetNum = 0.1;
+    var totalNum = 0;
+    // arr = [0.12,0.15,0.48,0.24,0.26,0.28,0.32,0.36,0.38,0.18];
+    // sum = 6.12;
+    // offsetNum = 0;
+    // totalNum = 29;
+    // 限制次数
+    var countNum = 0;
+    $('.sure').on('click',function () { 
+        
+        // 总金额
+        sum = $('.sum').val();
+        // 红包种类 （行）
+        var rowNum = arr.length;
+        // 总份数 （列）
+        totalNum = $('.totalNum').val();
+        // 误差
+        offsetNum = $('.offset').val();
+        // 测试
+        // arr = [0.12,0.15,0.48,0.24,0.26,0.28,0.32,0.36,0.38,0.18];
+        // Object.assign(arrAfterShuffle,arr);
+        // shuffle(arrAfterShuffle);
+        // sum = 6.12;
+        // offsetNum = 0.1;
+        // totalNum = 29;
+        // rowNum = arr.length;
+        //随机洗牌
+        Object.assign(arrAfterShuffle,arr);
+        shuffle(arrAfterShuffle);
+        // 创建二维数组
+        var arrTemp = new Array();
+        for(var i=0;i < rowNum;i++){          //一维长度为5
+            arrTemp[i]=new Array(i);    //在声明二维
+          for(var j=0;j< totalNum;j++){      //二维长度为5
+            arrTemp[i][j]=j+1;
+          }
+        }
+        // 删除
+        $('.redTable').children().remove();
+        if (arr.length > 0){
+            var redTd = "<tr><td>红包类型</td>"
+            //表头
+            arrAfterShuffle.forEach(element => {
+                redTd = redTd + "<td>"+ element +"</td>";
+            });
+            redTd = redTd + "<td>红包总额(¥"+sum+")</td>"
+            $('.redTable').append(redTd+"</tr>");
+            // console.log(redTd);
+            recursion(0,arrTemp,0,"",0);
+            // for(var i=0;i<arrTemp.length;i++){
+            //     for(var j=0;j<arrTemp[i].length;j++){
+            //         console.log(arrTemp[i][j]);
+            //     }
+            //     console.log("<br/>");
+            // }
+            //初始化
+            countNum = 0;
+            arrAfterShuffle = [];
+        }
+        // alert("计算完成！");
+    });
+
+    $('.add').on('click',function () {
+        arr.push($('.iptVal').val())
+        $('.numList').append("<p>"+$('.iptVal').val()+"<span class='remove'>删除</span></p>");
+    });
+    $('body').on('click','.remove',function () {
+        var ind = $(this).parent().index();
+        // console.log("index:"+ind);
+        $(this).parent().remove();
+        arr.splice(ind,1);
+        $('.redTable').children().remove();
+        // console.log(arr);
+        // if (arr.length > 0){
+        //     var redTd = "<tr><td>红包类型</td>"
+        //     //表头
+        //     arrAfterShuffle.forEach(element => {
+        //         redTd = redTd + "<td>"+ element +"</td>";
+        //     });
+        //     $('.redTable').append(redTd+"</tr>");
+        // }
+    });
+    function recursion (index,arrTemp,combination,process,num){
+        if(arrTemp.length < 1 || countNum > 10000){
+            return;
+        }
+        // console.log(countNum);
+        for (var i = 0; i < arrTemp[index].length - num; i++) {
+            var dogStyle = arrTemp[index][i];// 获取到当前遍历到的某个具体的元素
+            var tempDSC = combination + dogStyle * arrAfterShuffle[index];
+            var result = process.concat(dogStyle.toString().concat(",")) ;
+            var nums = dogStyle+num;
+            if (index + 1 == arrTemp.length) {// 如果到了最后一维，直接输出
+                // console.log(countNum);
+                if(nums==totalNum && Math.abs(sum - tempDSC) <= offsetNum){
+                    // console.log(tempDSC);
+                    // console.log("Yes情况"+result);
+                    showResult(result,tempDSC);
+                    countNum++;                    
+                }else{
+                    countNum++;
+                    // console.log(tempDSC);
+                    // console.log("No情况"+result);
+                }
+            } else {// 如果还没到最后一维，带着当前组合的部分进行下一维
+                recursion(index + 1, arrTemp, tempDSC,result,nums);
+            }
+        }
+        // console.log(countNum);
+    }
+    function showResult(result,tempDSC){
+        var turnResult = result.substring(0,result.length - 1).split(",");
+        // console.log(turnResult);
+        var addRow = "<tr><td>红包个数</td>";
+        for (let index = 0; index < turnResult.length; index++) {
+            const element = turnResult[index];
+            addRow = addRow + "<td>"+element+"</td>";
+            // console.log(addRow);
+        }
+        addRow = addRow + "<td>"+tempDSC.toFixed(2)+"</td>";
+        addRow = addRow + "</tr>";
+        // console.log(addRow);
+        $('.redTable').append(addRow);
+    }
+    function shuffle(arr) {
+        var i, 
+        j,
+        temp;
+        for (i = arr.length - 1; i > 0; i--) {
+            j = Math.floor(Math.random() * (i + 1));
+            temp = arr[i];
+            arr[i] = arr[j];
+            arr[j] = temp;
+        }
+        return arr;
+    };
+</script>
+</html>
